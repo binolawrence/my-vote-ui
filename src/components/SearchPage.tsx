@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import SearchBar from "./SearchBar";
 import PdfPageViewer from "./PdfPageViewer";
 
@@ -39,63 +39,23 @@ const SearchPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [pdfLoading, setPdfLoading] = useState(false);
-  const [pdfError, setPdfError] = useState<string | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (pdfUrl) {
-        URL.revokeObjectURL(pdfUrl);
-      }
-    };
-  }, [pdfUrl]);
+  const getPdfLink = (voter: VoterSearchResult) => {
+    const params = new URLSearchParams();
+    params.set("fileName", voter.fileLocation);
+    params.set("fileLocation", voter.fileLocation);
+    params.set("pageNo", String(voter.pageNo));
 
-  const handleLoadPDF = async (fileLocation: string, pageNo: number, searchText: string[]) => {
-    try {
-      setPdfLoading(true);
-      setPdfError(null);
-      const params = new URLSearchParams();
-      params.set("fileName", fileLocation);
-      params.set("pageNo", String(pageNo));
-      searchText
-        .map((text) => text.trim())
-        .filter((text) => text.length > 0)
-        .forEach((text) => params.append("searchText", text));
+    [voter.name, voter.relativeName, voter.streetName ?? ""]
+      .map((text) => text.trim())
+      .filter((text) => text.length > 0)
+      .forEach((text) => params.append("searchText", text));
 
-      const response = await fetch(
-        `http://localhost:8080/pdf/loadPDF?${params.toString()}`,
-        { method: "GET" }
-      );
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-
-        setPdfUrl((previousUrl) => {
-          if (previousUrl) {
-            URL.revokeObjectURL(previousUrl);
-          }
-          return url;
-        });
-      } else {
-        setPdfError("Failed to load PDF");
-      }
-    } catch (error) {
-      console.error("Error loading PDF:", error);
-      setPdfError("Error loading PDF");
-    } finally {
-      setPdfLoading(false);
-    }
+    return `http://localhost:8080/pdf/loadPDF?${params.toString()}`;
   };
 
   const handleSearch = async ({ name, fathername, streetname }: { name: string; fathername: string; streetname: string }) => {
-    setPdfUrl((previousUrl) => {
-      if (previousUrl) {
-        URL.revokeObjectURL(previousUrl);
-      }
-      return null;
-    });
-    setPdfError(null);
-    setPdfLoading(false);
+    setPdfUrl(null);
     setHasSearched(false);
     setLoading(true);
 
@@ -131,80 +91,80 @@ const SearchPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="search-card">
-        <SearchBar onSearch={handleSearch} defaultValues={{ name: "Rajesh", fathername: "Muthukumar" }} />
-      </div>
+      <div className="panel-card combined-panel">
+        <div className="combined-panel-section">
+          <SearchBar onSearch={handleSearch} defaultValues={{ name: "Rajesh", fathername: "Muthukumar" }} />
+        </div>
 
-      {loading && <p className="status-text">Searching...</p>}
+        {loading && <p className="status-text">Searching...</p>}
 
-      {results.length > 0 && (
-        <div style={{ padding: 20 }}>
-          <h2>Voter Search Results</h2>
-          <div className="table-wrapper">
-            <table className="results-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
-              <thead>
-                <tr>
-                  <th style={thStyle}>#</th>
-                  <th style={thStyle}>EPIC No</th>
-                  <th style={thStyle}>Name</th>
-                  <th style={thStyle}>Relative Name</th>
-                  <th style={thStyle}>Age</th>
-                  <th style={thStyle}>Address</th>
-                  <th style={thStyle}>Ward No</th>
-                  <th style={thStyle}>Assembly</th>
-                  <th style={thStyle}>District</th>
-                  <th style={thStyle}>Polling Station</th>
-                  <th style={thStyle}>Part Serial No</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((voter, index) => (
-                  <tr key={index}>
-                    <td style={tdStyle} data-label="#">{index + 1}</td>
-                    <td style={tdStyle} data-label="EPIC No">
-                      {voter.epicNo ? (
-                        <a
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleLoadPDF(voter.fileLocation, voter.pageNo, [
-                              voter.name,
-                              voter.relativeName,
-                              voter.streetName ?? "",
-                            ]);
-                          }}
-                          style={{ color: "#0066cc", textDecoration: "underline", cursor: "pointer" }}
-                        >
-                          {voter.epicNo}
-                        </a>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td style={tdStyle} data-label="Name">{voter.name}</td>
-                    <td style={tdStyle} data-label="Relative Name">{voter.relativeName}</td>
-                    <td style={tdStyle} data-label="Age">{voter.age > 0 ? voter.age : "-"}</td>
-                    <td style={tdStyle} data-label="Address">{voter.address}</td>
-                    <td style={tdStyle} data-label="Ward No">{voter.wardNo ?? "-"}</td>
-                    <td style={tdStyle} data-label="Assembly">{voter.assembly ?? "-"}</td>
-                    <td style={tdStyle} data-label="District">{voter.district ?? "-"}</td>
-                    <td style={tdStyle} data-label="Polling Station">{voter.getPollingStation}</td>
-                    <td style={tdStyle} data-label="Part Serial No">{voter.partSerialNo ?? "-"}</td>
+        {results.length > 0 && (
+          <div className="combined-panel-section">
+            <h2>Voter Search Results</h2>
+            <div className="table-wrapper">
+              <table className="results-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>#</th>
+                    <th style={thStyle}>EPIC No</th>
+                    <th style={thStyle}>Name</th>
+                    <th style={thStyle}>Relative Name</th>
+                    <th style={thStyle}>Age</th>
+                    <th style={thStyle}>Address</th>
+                    <th style={thStyle}>Ward No</th>
+                    <th style={thStyle}>Assembly</th>
+                    <th style={thStyle}>District</th>
+                    <th style={thStyle}>Polling Station</th>
+                    <th style={thStyle}>Part Serial No</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {results.map((voter, index) => (
+                    <tr key={index}>
+                      <td style={tdStyle} data-label="#">{index + 1}</td>
+                      <td style={tdStyle} data-label="EPIC No">
+                        {voter.epicNo ? (
+                          <a
+                            href={getPdfLink(voter)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setPdfUrl(getPdfLink(voter));
+                            }}
+                            style={{ color: "#0066cc", textDecoration: "underline" }}
+                          >
+                            {voter.epicNo}
+                          </a>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td style={tdStyle} data-label="Name">{voter.name}</td>
+                      <td style={tdStyle} data-label="Relative Name">{voter.relativeName}</td>
+                      <td style={tdStyle} data-label="Age">{voter.age > 0 ? voter.age : "-"}</td>
+                      <td style={tdStyle} data-label="Address">{voter.address}</td>
+                      <td style={tdStyle} data-label="Ward No">{voter.wardNo ?? "-"}</td>
+                      <td style={tdStyle} data-label="Assembly">{voter.assembly ?? "-"}</td>
+                      <td style={tdStyle} data-label="District">{voter.district ?? "-"}</td>
+                      <td style={tdStyle} data-label="Polling Station">{voter.getPollingStation}</td>
+                      <td style={tdStyle} data-label="Part Serial No">{voter.partSerialNo ?? "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      )}
-      {hasSearched && !loading && results.length === 0 && (
-        <p className="status-text">No voter matches with the input.</p>
-      )}
-      {(pdfUrl || pdfLoading || pdfError) && (
-        <div className="panel-card">
-          <PdfPageViewer pdfUrl={pdfUrl} loading={pdfLoading} error={pdfError} />
-        </div>
-      )}
+        )}
+
+        {hasSearched && !loading && results.length === 0 && (
+          <p className="status-text">No voter matches with the input.</p>
+        )}
+
+        {pdfUrl && (
+          <div className="combined-panel-section combined-panel-section--pdf">
+            <PdfPageViewer pdfUrl={pdfUrl} />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

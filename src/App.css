@@ -253,6 +253,25 @@
   margin-bottom: 24px;
 }
 
+.combined-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.combined-panel-section {
+  padding-top: 4px;
+}
+
+.combined-panel-section + .combined-panel-section {
+  border-top: 1px solid rgba(148, 163, 184, 0.24);
+  padding-top: 20px;
+}
+
+.combined-panel-section--pdf {
+  margin-top: 6px;
+}
+
 .table-wrapper {
   width: 100%;
   overflow-x: auto;

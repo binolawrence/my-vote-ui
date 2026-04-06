@@ -1,3 +1,5 @@
+import type { VoterRecord } from "./VoterTable";
+
 export const sampleData: VoterRecord[] = [
   {
     sNo: 1,
