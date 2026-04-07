@@ -12,8 +12,11 @@ RUN npm ci --no-audit --no-fund
 # Copy all source code and configuration files
 COPY . .
 
-# Build the application with verbose output for debugging
-RUN npm run build
+# List files to debug
+RUN ls -la
+
+# Build the application
+RUN npm run build 2>&1
 
 # Production stage
 FROM node:18-alpine
