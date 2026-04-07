@@ -8,11 +8,17 @@ COPY package*.json ./
 RUN npm ci
 
 # Build stage
-FROM dependencies AS build
+FROM node:18-alpine AS build
 
 WORKDIR /build
 
-# Copy all source code
+# Copy package files
+COPY package*.json ./
+
+# Copy node_modules from dependencies stage
+COPY --from=dependencies /build/node_modules ./node_modules
+
+# Copy all source code and config files
 COPY . .
 
 # Build the application
