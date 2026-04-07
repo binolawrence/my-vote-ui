@@ -1,7 +1,7 @@
 # Dockerfile for React Frontend
 # Place this file in the frontend/ directory if using a separate React project
 
-FROM node:18-alpine as dependencies
+FROM node:18-alpine AS dependencies
 
 WORKDIR /build
 
@@ -10,7 +10,7 @@ COPY package*.json ./
 RUN npm ci
 
 # Build stage
-FROM dependencies as build
+FROM dependencies AS build
 
 WORKDIR /build
 
