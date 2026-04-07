@@ -34,6 +34,8 @@ const tdStyle: React.CSSProperties = {
   verticalAlign: "top",
 };
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080").replace(/\/+$/, "");
+
 const SearchPage: React.FC = () => {
   const [results, setResults] = useState<VoterSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -51,7 +53,7 @@ const SearchPage: React.FC = () => {
       .filter((text) => text.length > 0)
       .forEach((text) => params.append("searchText", text));
 
-    return `http://localhost:8080/pdf/loadPDF?${params.toString()}`;
+    return `${API_BASE_URL}/pdf/loadPDF?${params.toString()}`;
   };
 
   const handleSearch = async ({ name, fathername, streetname }: { name: string; fathername: string; streetname: string }) => {
@@ -68,7 +70,7 @@ const SearchPage: React.FC = () => {
     const queryString = params.toString();
 
     const data = await fetch(
-      `http://localhost:8080/pdf/search?${queryString}`,
+      `${API_BASE_URL}/pdf/search?${queryString}`,
       { method: "GET" }
     ).then((res) => res.json());
 
