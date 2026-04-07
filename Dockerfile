@@ -1,6 +1,4 @@
-# Dockerfile for React Frontend
-# Place this file in the frontend/ directory if using a separate React project
-
+# Dependencies stage
 FROM node:18-alpine AS dependencies
 
 WORKDIR /build
@@ -14,8 +12,10 @@ FROM dependencies AS build
 
 WORKDIR /build
 
+# Copy all source code
 COPY . .
 
+# Build the application
 RUN npm run build
 
 # Production stage
@@ -27,7 +27,7 @@ WORKDIR /app
 RUN npm install -g serve
 
 # Copy built files from build stage
-COPY --from=build /build/build ./build
+COPY --from=build /build/dist ./dist
 
 EXPOSE 3000
 
@@ -35,5 +35,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost:3000/ || exit 1
 
-CMD ["serve", "-s", "build", "-l", "3000"]
+CMD ["serve", "-s", "dist", "-l", "3000"]
 
