@@ -82,7 +82,7 @@ const SearchPage: React.FC = () => {
       <div className="page-header">
         <div className="page-header-row">
           <div>
-            <div className="header-title">Tambaram Assembly</div>
+            <div className="header-title"> Search by Name,Relative Name</div>
             <p className="header-subtitle">
               Election search, voter details and PDF preview in one place.
             </p>
