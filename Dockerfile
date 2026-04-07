@@ -1,27 +1,18 @@
-# Dependencies stage
-FROM node:18-alpine AS dependencies
-
-WORKDIR /build
-
-COPY package*.json ./
-
-RUN npm ci
-
 # Build stage
-FROM node:18-alpine AS build
+FROM node:18-alpine AS builder
 
-WORKDIR /build
+WORKDIR /app
 
-# Copy package files
+# Copy package files first
 COPY package*.json ./
 
-# Copy node_modules from dependencies stage
-COPY --from=dependencies /build/node_modules ./node_modules
+# Install dependencies
+RUN npm ci --no-audit --no-fund
 
-# Copy all source code and config files
+# Copy all source code and configuration files
 COPY . .
 
-# Build the application
+# Build the application with verbose output for debugging
 RUN npm run build
 
 # Production stage
@@ -29,11 +20,11 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Install serve to run production build
+# Install serve to run the production build
 RUN npm install -g serve
 
-# Copy built files from build stage
-COPY --from=build /build/dist ./dist
+# Copy the built dist folder from builder stage
+COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000
 
@@ -41,5 +32,6 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost:3000/ || exit 1
 
+# Start the application
 CMD ["serve", "-s", "dist", "-l", "3000"]
 
