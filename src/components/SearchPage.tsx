@@ -71,7 +71,7 @@ const SearchPage: React.FC = () => {
     const queryString = params.toString();
 
     const data = await fetch(
-      `${API_BASE_URL}/search?${queryString}`,
+      `${API_BASE_URL}/pdf/search?${queryString}`,
       { method: "GET" }
     ).then((res) => res.json());
 
