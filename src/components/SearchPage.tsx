@@ -45,6 +45,7 @@ const SearchPage: React.FC = () => {
   const getPdfLink = (voter: VoterSearchResult) => {
     const params = new URLSearchParams();
     params.set("fileName", voter.fileLocation);
+
     params.set("fileLocation", voter.fileLocation);
     params.set("pageNo", String(voter.pageNo));
 
