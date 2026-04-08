@@ -54,7 +54,7 @@ const SearchPage: React.FC = () => {
       .filter((text) => text.length > 0)
       .forEach((text) => params.append("searchText", text));
 
-    return `${API_BASE_URL}/api/pdf/loadPDF?${params.toString()}`;
+    return `${API_BASE_URL}/pdf/loadPDF?${params.toString()}`;
   };
 
   const handleSearch = async ({ name, fathername, streetname }: { name: string; fathername: string; streetname: string }) => {
@@ -71,7 +71,7 @@ const SearchPage: React.FC = () => {
     const queryString = params.toString();
 
     const data = await fetch(
-      `${API_BASE_URL}/api/pdf/search?${queryString}`,
+      `${API_BASE_URL}/search?${queryString}`,
       { method: "GET" }
     ).then((res) => res.json());
 
