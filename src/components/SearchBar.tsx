@@ -2,38 +2,46 @@ import React, { useState } from "react";
 
 interface SearchPayload {
   name: string;
-  fathername: string;
-  streetname: string;
+  relativeName: string;
+  streetName: string;
 }
 
 interface Props {
   onSearch: (payload: SearchPayload) => void;
-  defaultValues?: Partial<SearchPayload>;
 }
 
-const SearchBar: React.FC<Props> = ({ onSearch, defaultValues }) => {
-  const [name, setName] = useState(defaultValues?.name ?? "");
-  const [fathername, setFathername] = useState(defaultValues?.fathername ?? "");
-  const [streetname, setStreetname] = useState(defaultValues?.streetname ?? "");
+const SearchBar: React.FC<Props> = ({ onSearch }) => {
+  const [name, setName] = useState("");
+  const [relativeName, setRelativeName] = useState("");
+  const [streetName, setStreetName] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = () => {
-    if (!name.trim() || !fathername.trim()) {
-      setError("Name and Father Name are required.");
+    const trimmedName = name.trim();
+    const trimmedRelativeName = relativeName.trim();
+    const trimmedStreetName = streetName.trim();
+
+    if (!trimmedName) {
+      setError("Name is required.");
+      return;
+    }
+
+    if (!trimmedRelativeName && !trimmedStreetName) {
+      setError("Provide either Relative Name or Street Name.");
       return;
     }
 
     setError(null);
     onSearch({
-      name: name.trim(),
-      fathername: fathername.trim(),
-      streetname: streetname.trim(),
+      name: trimmedName,
+      relativeName: trimmedRelativeName,
+      streetName: trimmedStreetName,
     });
   };
 
   return (
-    <div className="search-bar-container">
-      {error && <p className="error-text" style={{ marginBottom: 8 }}>{error}</p>}
+    <div className={`search-bar-container${error ? " has-error" : ""}`}>
+      {error && <p className="error-text search-bar-error">{error}</p>}
       <input
         className="search-input"
         placeholder="Name (required)"
@@ -43,16 +51,16 @@ const SearchBar: React.FC<Props> = ({ onSearch, defaultValues }) => {
       />
       <input
         className="search-input"
-        placeholder="Father Name (required)"
-        value={fathername}
-        onChange={(e) => setFathername(e.target.value)}
+        placeholder="Relative Name (required)"
+        value={relativeName}
+        onChange={(e) => setRelativeName(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
       />
       <input
         className="search-input"
-        placeholder="Street Name (optional)"
-        value={streetname}
-        onChange={(e) => setStreetname(e.target.value)}
+        placeholder="Street Name (required if Relative Name is empty)"
+        value={streetName}
+        onChange={(e) => setStreetName(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
       />
 

@@ -1,22 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import SearchBar from "./SearchBar";
 import PdfPageViewer from "./PdfPageViewer";
 
-interface VoterSearchResult {
-  epicNo: string | null;
-  name: string;
-  relativeName: string;
-  streetName?: string | null;
-  address: string;
-  assembly: string | null;
-  state: string | null;
-  district: string | null;
-  age: number;
-  wardNo: string | null;
-  getPollingStation: string;
-  partSerialNo: string | null;
+interface SearchResult {
+  fileName: string;
   pageNo: number;
   fileLocation: string;
+  pollingStation: string;
+  streetName: string;
+  name: string;
+  relativeName: string;
 }
 
 const thStyle: React.CSSProperties = {
@@ -36,48 +29,139 @@ const tdStyle: React.CSSProperties = {
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080").replace(/\/+$/, "");
 
+const normalizeFileParam = (value: string) => value.trim().replace(/\\+/g, "/");
+
 const SearchPage: React.FC = () => {
-  const [results, setResults] = useState<VoterSearchResult[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [previewMimeType, setPreviewMimeType] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [lastSearch, setLastSearch] = useState<{ name: string; relativeName: string; streetName: string } | null>(null);
 
-  const getPdfLink = (voter: VoterSearchResult) => {
-    const params = new URLSearchParams();
-    params.set("fileName", voter.fileLocation);
+  const getPdfLink = (result: SearchResult) => {
+    const queryParts: string[] = [
+      `fileName=${encodeURIComponent(normalizeFileParam(result.fileName))}`,
+      `fileLocation=${encodeURIComponent(normalizeFileParam(result.fileLocation))}`,
+      `pageNo=${encodeURIComponent(String(result.pageNo))}`,
+    ];
 
-    params.set("fileLocation", voter.fileLocation);
-    params.set("pageNo", String(voter.pageNo));
+    if (lastSearch) {
+      [lastSearch.name, lastSearch.relativeName, lastSearch.streetName]
+        .map((text) => text.trim())
+        .filter((text) => text.length > 0)
+        .forEach((text) => queryParts.push(`searchText=${encodeURIComponent(text)}`));
+    }
 
-    [voter.name, voter.relativeName, voter.streetName ?? ""]
-      .map((text) => text.trim())
-      .filter((text) => text.length > 0)
-      .forEach((text) => params.append("searchText", text));
-
-    return `${API_BASE_URL}/pdf/loadPDF?${params.toString()}`;
+    return `${API_BASE_URL}/pdf/loadPDF?${queryParts.join("&")}`;
   };
 
-  const handleSearch = async ({ name, fathername, streetname }: { name: string; fathername: string; streetname: string }) => {
+  useEffect(() => {
+    return () => {
+      if (pdfUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [pdfUrl]);
+
+  const loadPdfPreview = async (result: SearchResult) => {
+    setPdfLoading(true);
+    setPdfError(null);
+
+    try {
+      const response = await fetch(getPdfLink(result), { method: "GET" });
+      const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+
+      if (!response.ok) {
+        throw new Error(`PDF API failed with status ${response.status}`);
+      }
+
+      // For ByteArrayResource responses, the backend may return application/pdf
+      // or application/octet-stream. Reject only obvious non-binary error payloads.
+      if (contentType.includes("text/html") || contentType.includes("application/json") || contentType.includes("text/plain")) {
+        throw new Error("Non-binary response returned");
+      }
+
+      const buffer = await response.arrayBuffer();
+      if (buffer.byteLength === 0) {
+        throw new Error("Empty PDF response");
+      }
+
+      const headerBytes = new Uint8Array(buffer.slice(0, 8));
+      const headerText = String.fromCharCode(...headerBytes.slice(0, 5));
+      const looksLikePdf = headerText === "%PDF-";
+      const looksLikePng =
+        headerBytes[0] === 0x89 &&
+        headerBytes[1] === 0x50 &&
+        headerBytes[2] === 0x4e &&
+        headerBytes[3] === 0x47 &&
+        headerBytes[4] === 0x0d &&
+        headerBytes[5] === 0x0a &&
+        headerBytes[6] === 0x1a &&
+        headerBytes[7] === 0x0a;
+
+      const isPdfContentType = contentType.includes("pdf") || contentType.includes("octet-stream") || contentType.length === 0;
+      const isImageContentType = contentType.includes("image/");
+
+      if (!isImageContentType && !looksLikePng && !isPdfContentType && !looksLikePdf) {
+        throw new Error("Unsupported preview response returned");
+      }
+
+      const nextMimeType = isImageContentType || looksLikePng ? "image/png" : "application/pdf";
+      const blob = new Blob([buffer], { type: nextMimeType });
+      const nextPdfUrl = URL.createObjectURL(blob);
+
+      setPdfUrl((prevUrl) => {
+        if (prevUrl?.startsWith("blob:")) {
+          URL.revokeObjectURL(prevUrl);
+        }
+        return nextPdfUrl;
+      });
+      setPreviewMimeType(nextMimeType);
+    } catch {
+      setPdfUrl(null);
+      setPreviewMimeType(null);
+      setPdfError("Unable to load document preview. The server returned an invalid response.");
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const handleSearch = async ({ name, relativeName, streetName }: { name: string; relativeName: string; streetName: string }) => {
     setPdfUrl(null);
+    setPreviewMimeType(null);
+    setPdfError(null);
+    setSearchError(null);
     setHasSearched(false);
     setLoading(true);
+    setLastSearch({ name, relativeName, streetName });
 
     const params = new URLSearchParams();
 
     params.set("name", name);
-    params.set("fathername", fathername);
-    if (streetname) params.set("streetname", streetname);
+    if (relativeName) params.set("relativeName", relativeName);
+    if (streetName) params.set("streetName", streetName);
 
     const queryString = params.toString();
 
-    const data = await fetch(
-      `${API_BASE_URL}/pdf/search?${queryString}`,
-      { method: "GET" }
-    ).then((res) => res.json());
+    try {
+      const response = await fetch(`${API_BASE_URL}/pdf/search?${queryString}`, { method: "GET" });
+      if (!response.ok) {
+        throw new Error(`Search API failed with status ${response.status}`);
+      }
 
-    setResults(data);
-    setHasSearched(true);
-    setLoading(false);
+      const data = await response.json();
+      setResults(data);
+    } catch {
+      setResults([]);
+      setSearchError("Search failed. Please try again or check server logs.");
+    } finally {
+      setHasSearched(true);
+      setLoading(false);
+    }
   };
 
   return (
@@ -85,7 +169,7 @@ const SearchPage: React.FC = () => {
       <div className="page-header">
         <div className="page-header-row">
           <div>
-            <div className="header-title"> Search by Name,Relative Name</div>
+            <div className="header-title"> Know your Voting Details</div>
             <p className="header-subtitle">
               Election search, voter details and PDF preview in one place.
             </p>
@@ -96,60 +180,49 @@ const SearchPage: React.FC = () => {
 
       <div className="panel-card combined-panel">
         <div className="combined-panel-section">
-          <SearchBar onSearch={handleSearch} defaultValues={{ name: "Rajesh", fathername: "Muthukumar" }} />
+          <SearchBar onSearch={handleSearch} />
         </div>
 
         {loading && <p className="status-text">Searching...</p>}
+        {searchError && <p className="error-text">{searchError}</p>}
 
         {results.length > 0 && (
           <div className="combined-panel-section">
-            <h2>Voter Search Results</h2>
+            <h2>Search Results</h2>
             <div className="table-wrapper">
               <table className="results-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
                 <thead>
                   <tr>
                     <th style={thStyle}>#</th>
-                    <th style={thStyle}>EPIC No</th>
                     <th style={thStyle}>Name</th>
                     <th style={thStyle}>Relative Name</th>
-                    <th style={thStyle}>Age</th>
-                    <th style={thStyle}>Address</th>
-                    <th style={thStyle}>Ward No</th>
-                    <th style={thStyle}>Assembly</th>
-                    <th style={thStyle}>District</th>
                     <th style={thStyle}>Polling Station</th>
-                    <th style={thStyle}>Part Serial No</th>
+                    <th style={thStyle}>Street Name</th>
+                    <th style={thStyle}>Page No</th>
+                    <th style={thStyle}>PDF</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {results.map((voter, index) => (
+                  {results.map((result, index) => (
                     <tr key={index}>
                       <td style={tdStyle} data-label="#">{index + 1}</td>
-                      <td style={tdStyle} data-label="EPIC No">
-                        {voter.epicNo ? (
-                          <a
-                            href={getPdfLink(voter)}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setPdfUrl(getPdfLink(voter));
-                            }}
-                            style={{ color: "#0066cc", textDecoration: "underline" }}
-                          >
-                            {voter.epicNo}
-                          </a>
-                        ) : (
-                          "—"
-                        )}
+                      <td style={tdStyle} data-label="Name">{result.name || "-"}</td>
+                      <td style={tdStyle} data-label="Relative Name">{result.relativeName || "-"}</td>
+                      <td style={tdStyle} data-label="Polling Station">{result.pollingStation || "-"}</td>
+                      <td style={tdStyle} data-label="Street Name">{result.streetName || "-"}</td>
+                      <td style={tdStyle} data-label="Page No">{result.pageNo}</td>
+                      <td style={tdStyle} data-label="PDF">
+                        <a
+                          href={getPdfLink(result)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            void loadPdfPreview(result);
+                          }}
+                          style={{ color: "#0066cc", textDecoration: "underline" }}
+                        >
+                          View
+                        </a>
                       </td>
-                      <td style={tdStyle} data-label="Name">{voter.name}</td>
-                      <td style={tdStyle} data-label="Relative Name">{voter.relativeName}</td>
-                      <td style={tdStyle} data-label="Age">{voter.age > 0 ? voter.age : "-"}</td>
-                      <td style={tdStyle} data-label="Address">{voter.address}</td>
-                      <td style={tdStyle} data-label="Ward No">{voter.wardNo ?? "-"}</td>
-                      <td style={tdStyle} data-label="Assembly">{voter.assembly ?? "-"}</td>
-                      <td style={tdStyle} data-label="District">{voter.district ?? "-"}</td>
-                      <td style={tdStyle} data-label="Polling Station">{voter.getPollingStation}</td>
-                      <td style={tdStyle} data-label="Part Serial No">{voter.partSerialNo ?? "-"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -162,9 +235,9 @@ const SearchPage: React.FC = () => {
           <p className="status-text">No voter matches with the input.</p>
         )}
 
-        {pdfUrl && (
+        {(pdfUrl || pdfLoading || pdfError) && (
           <div className="combined-panel-section combined-panel-section--pdf">
-            <PdfPageViewer pdfUrl={pdfUrl} />
+            <PdfPageViewer pdfUrl={pdfUrl} previewMimeType={previewMimeType} loading={pdfLoading} error={pdfError} />
           </div>
         )}
       </div>
