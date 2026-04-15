@@ -8,9 +8,10 @@ interface SearchPayload {
 
 interface Props {
   onSearch: (payload: SearchPayload) => void;
+  onClear: () => void;
 }
 
-const SearchBar: React.FC<Props> = ({ onSearch }) => {
+const SearchBar: React.FC<Props> = ({ onSearch, onClear }) => {
   const [name, setName] = useState("");
   const [relativeName, setRelativeName] = useState("");
   const [streetName, setStreetName] = useState("");
@@ -37,6 +38,14 @@ const SearchBar: React.FC<Props> = ({ onSearch }) => {
       relativeName: trimmedRelativeName,
       streetName: trimmedStreetName,
     });
+  };
+
+  const handleClear = () => {
+    setName("");
+    setRelativeName("");
+    setStreetName("");
+    setError(null);
+    onClear();
   };
 
   return (
@@ -66,6 +75,9 @@ const SearchBar: React.FC<Props> = ({ onSearch }) => {
 
       <button onClick={handleSubmit} className="search-button">
         Search
+      </button>
+      <button onClick={handleClear} className="clear-button">
+        Clear
       </button>
     </div>
   );

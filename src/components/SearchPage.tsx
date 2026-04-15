@@ -130,7 +130,18 @@ const SearchPage: React.FC = () => {
     }
   };
 
+  const handleClear = () => {
+    setResults([]);
+    setPdfUrl(null);
+    setPreviewMimeType(null);
+    setPdfError(null);
+    setSearchError(null);
+    setHasSearched(false);
+    setLastSearch(null);
+  };
+
   const handleSearch = async ({ name, relativeName, streetName }: { name: string; relativeName: string; streetName: string }) => {
+    setResults([]);
     setPdfUrl(null);
     setPreviewMimeType(null);
     setPdfError(null);
@@ -148,7 +159,10 @@ const SearchPage: React.FC = () => {
     const queryString = params.toString();
 
     try {
-      const response = await fetch(`${API_BASE_URL}/pdf/search?${queryString}`, { method: "GET" });
+      const response = await fetch(`${API_BASE_URL}/pdf/search?${queryString}`, {
+        method: "GET",
+        cache: "no-store",
+      });
       if (!response.ok) {
         throw new Error(`Search API failed with status ${response.status}`);
       }
@@ -169,18 +183,19 @@ const SearchPage: React.FC = () => {
       <div className="page-header">
         <div className="page-header-row">
           <div>
-            <div className="header-title"> Know your Voting Details</div>
+            <div className="header-title">உங்கள் வாக்கு உங்கள் குரல்…</div>
+            <div className="header-context">தாம்பரம் சட்டமன்றத் தொகுதி | Tambaram Assembly</div>
             <p className="header-subtitle">
-              Election search, voter details and PDF preview in one place.
+              Know your polling booth, part number, and location.
             </p>
           </div>
-          <div className="logo-badge">TA</div>
+          <img src="/tambaram-logo.svg" alt="Tambaram Logo" className="logo-badge" />
         </div>
       </div>
 
       <div className="panel-card combined-panel">
         <div className="combined-panel-section">
-          <SearchBar onSearch={handleSearch} />
+          <SearchBar onSearch={handleSearch} onClear={handleClear} />
         </div>
 
         {loading && <p className="status-text">Searching...</p>}
@@ -240,6 +255,10 @@ const SearchPage: React.FC = () => {
             <PdfPageViewer pdfUrl={pdfUrl} previewMimeType={previewMimeType} loading={pdfLoading} error={pdfError} />
           </div>
         )}
+
+        <div className="powered-by-caption">
+          Powered by NTK Tambaram
+        </div>
       </div>
     </div>
   );
