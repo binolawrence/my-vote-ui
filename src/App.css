@@ -251,6 +251,13 @@
   font-weight: 600;
 }
 
+.search-instruction {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
 .logo-badge {
   width: 80px;
   height: 80px;

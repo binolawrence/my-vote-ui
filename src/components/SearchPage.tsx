@@ -196,6 +196,9 @@ const SearchPage: React.FC = () => {
 
       <div className="panel-card combined-panel">
         <div className="combined-panel-section">
+          <p className="search-instruction">
+            பொருத்தம்(search result) மிகச் சரியாக இருக்க  முதல் பெயர் (FirstName) மற்றும் தெருவின் பெயரைப் (Street name) பயன்படுத்தித் தேடுங்கள்.
+          </p>
           <SearchBar onSearch={handleSearch} onClear={handleClear} />
         </div>
 
