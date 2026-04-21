@@ -260,7 +260,7 @@ const SearchPage: React.FC = () => {
         )}
 
         <div className="powered-by-caption">
-          Powered by NTK Tambaram
+          Powered by Tulir 
         </div>
       </div>
     </div>
