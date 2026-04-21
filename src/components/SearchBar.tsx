@@ -22,13 +22,8 @@ const SearchBar: React.FC<Props> = ({ onSearch, onClear }) => {
     const trimmedRelativeName = relativeName.trim();
     const trimmedStreetName = streetName.trim();
 
-    if (!trimmedName) {
-      setError("Name is required.");
-      return;
-    }
-
-    if (!trimmedRelativeName && !trimmedStreetName) {
-      setError("Provide either Relative Name or Street Name.");
+    if (!trimmedName && !trimmedRelativeName && !trimmedStreetName) {
+      setError("At least one parameter is required.");
       return;
     }
 
@@ -53,21 +48,21 @@ const SearchBar: React.FC<Props> = ({ onSearch, onClear }) => {
       {error && <p className="error-text search-bar-error">{error}</p>}
       <input
         className="search-input"
-        placeholder="Name (required)"
+        placeholder="Name"
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
       />
       <input
         className="search-input"
-        placeholder="Relative Name (required)"
+        placeholder="Relative Name"
         value={relativeName}
         onChange={(e) => setRelativeName(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
       />
       <input
         className="search-input"
-        placeholder="Street Name (required if Relative Name is empty)"
+        placeholder="Street Name"
         value={streetName}
         onChange={(e) => setStreetName(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && handleSubmit()}

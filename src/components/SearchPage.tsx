@@ -187,8 +187,7 @@ const SearchPage: React.FC = () => {
             <div className="header-title">உங்கள் வாக்கு உங்கள் குரல்…</div>
             <div className="header-context">தாம்பரம் சட்டமன்றத் தொகுதி | Tambaram Assembly</div>
             <p className="header-subtitle">
-              Know your polling booth, part number, and location.
-            </p>
+              Know your polling booth, part number, and location using name or relative or street(e.g Vaikai st) or area (e.g sembakkam) details().             </p>
           </div>
           <img src="/tambaram-logo.svg" alt="Tambaram Logo" className="logo-badge" />
         </div>
@@ -197,7 +196,7 @@ const SearchPage: React.FC = () => {
       <div className="panel-card combined-panel">
         <div className="combined-panel-section">
           <p className="search-instruction">
-            பொருத்தம்(search result) மிகச் சரியாக இருக்க  முதல் பெயர் (FirstName) மற்றும் தெருவின் பெயரைப் (Street name) பயன்படுத்தித் தேடுங்கள்.
+          தேடல்(search) மிகச் சரியாக அமைய  முதல் பெயர் (FirstName) மற்றும் தெருவின் பெயரைப் (Street name) பயன்படுத்தித் தேடுங்கள் .
           </p>
           <SearchBar onSearch={handleSearch} onClear={handleClear} />
         </div>
